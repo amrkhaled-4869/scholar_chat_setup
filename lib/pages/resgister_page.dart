@@ -8,7 +8,7 @@ import 'package:scholar_chat/widgets/custom_button.dart';
 import 'package:scholar_chat/widgets/custom_text_field.dart';
 
 class RegisterPage extends StatefulWidget {
-  RegisterPage({Key? key}) : super(key: key);
+  const RegisterPage({super.key});
 
   static String id = 'RegisterPage';
 
@@ -23,7 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool isLoading = false;
 
-  GlobalKey<FormState> formKey = GlobalKey();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +84,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 10,
                 ),
                 CustomFormTextField(
+                  obscureText: true,
                   onChanged: (data) {
                     password = data;
                   },
@@ -95,25 +96,30 @@ class _RegisterPageState extends State<RegisterPage> {
                 CustomButon(
                   onTap: () async {
                     if (formKey.currentState!.validate()) {
-                      isLoading = true;
-                      setState(() {});
+                      setState(() => isLoading = true);
                       try {
                         await registerUser();
-
-                        Navigator.pushNamed(context, ChatPage.id);
+                        if (!mounted) return;
+                        Navigator.of(this.context).pushReplacementNamed(
+                          ChatPage.id,
+                          arguments: email,
+                        );
                       } on FirebaseAuthException catch (ex) {
+                        if (!mounted) return;
                         if (ex.code == 'weak-password') {
-                          showSnackBar(context, 'weak password');
+                          showSnackBar(this.context, 'weak password');
                         } else if (ex.code == 'email-already-in-use') {
-                          showSnackBar(context, 'email already exists');
+                          showSnackBar(this.context, 'email already exists');
                         }
                       } catch (ex) {
-                        showSnackBar(context, 'there was an error');
+                        if (!mounted) return;
+                        showSnackBar(this.context, 'there was an error');
                       }
 
-                      isLoading = false;
-                      setState(() {});
-                    } else {}
+                      if (mounted) {
+                        setState(() => isLoading = false);
+                      }
+                    }
                   },
                   text: 'REGISTER',
                 ),
@@ -151,7 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> registerUser() async {
-    UserCredential user = await FirebaseAuth.instance
+    await FirebaseAuth.instance
         .createUserWithEmailAndPassword(email: email!, password: password!);
   }
 }

@@ -1,6 +1,3 @@
-import 'dart:ffi';
-import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -13,7 +10,7 @@ import 'package:scholar_chat/widgets/custom_text_field.dart';
 import 'chat_page.dart';
 
 class LoginPage extends StatefulWidget {
-  LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   static String id = 'login page';
   @override
@@ -23,7 +20,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
-  GlobalKey<FormState> formKey = GlobalKey();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   String? email, password;
   @override
@@ -97,26 +94,30 @@ class _LoginPageState extends State<LoginPage> {
                 CustomButon(
                   onTap: () async {
                     if (formKey.currentState!.validate()) {
-                      isLoading = true;
-                      setState(() {});
+                      setState(() => isLoading = true);
                       try {
                         await loginUser();
-                        Navigator.pushNamed(context, ChatPage.id,
-                            arguments: email);
+                        if (!mounted) return;
+                        Navigator.of(this.context).pushReplacementNamed(
+                          ChatPage.id,
+                          arguments: email,
+                        );
                       } on FirebaseAuthException catch (ex) {
+                        if (!mounted) return;
                         if (ex.code == 'user-not-found') {
-                          showSnackBar(context, 'user not found');
+                          showSnackBar(this.context, 'user not found');
                         } else if (ex.code == 'wrong-password') {
-                          showSnackBar(context, 'wrong password');
+                          showSnackBar(this.context, 'wrong password');
                         }
                       } catch (ex) {
-                        print(ex);
-                        showSnackBar(context, 'there was an error');
+                        if (!mounted) return;
+                        showSnackBar(this.context, 'there was an error');
                       }
 
-                      isLoading = false;
-                      setState(() {});
-                    } else {}
+                      if (mounted) {
+                        setState(() => isLoading = false);
+                      }
+                    }
                   },
                   text: 'LOGIN',
                 ),
@@ -154,7 +155,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> loginUser() async {
-    UserCredential user = await FirebaseAuth.instance
-        .signInWithEmailAndPassword(email: email!, password: password!);
+    await FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: email!, password: password!)
+        .timeout(const Duration(seconds: 20));
   }
 }

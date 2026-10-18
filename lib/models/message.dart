@@ -5,7 +5,7 @@ class Message {
   final String id;
   Message(this.message, this.id);
 
-  factory Message.fromJson(jsonData) {
+  factory Message.fromJson(Map<String, dynamic> jsonData) {
     return Message(jsonData[kMessage], jsonData['id']);
   }
 }
